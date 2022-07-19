@@ -8,6 +8,7 @@ class CreateAccounts < ActiveRecord::Migration[6.0]
       t.string :phone_number
       t.string :email
       t.integer :status, null: false, default: 0
+      t.decimal :balance, precision: 10, scale: 2, null: false, default: 0
 
       t.timestamps
 

@@ -5,11 +5,12 @@
 # Table name: accounts
 #
 #  id           :bigint           not null, primary key
+#  balance      :decimal(10, 2)   default(0.0), not null
 #  email        :string
 #  first_name   :string
 #  last_name    :string
 #  phone_number :string
-#  status       :integer          default(0), not null
+#  status       :integer          default("pending"), not null
 #  created_at   :datetime         not null
 #  updated_at   :datetime         not null
 #
