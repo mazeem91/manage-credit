@@ -26,7 +26,8 @@
 FactoryBot.define do
   factory :transaction do
     association :account
-    amount_type { 1 }
+    event { :balance_topup }
+    amount_type { :credit }
     amount { "9.99" }
   end
 end

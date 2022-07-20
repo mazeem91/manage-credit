@@ -2,7 +2,8 @@ class Api::V1::AccountsController < ApplicationController
   def create
     @account = Account.new(account_params)
     if @account.save
-      render json: @account
+      @account = Account.includes(:transactions).find(@account.id)
+      render json: @account, status: 201
     else
       render error: { error: "Creation failed"}, status: 400
     end
@@ -23,24 +24,24 @@ class Api::V1::AccountsController < ApplicationController
   end
 
   def transfer_by_phone_number
-    @amount = params[:amount]
+    @amount = params[:amount].to_d
     @from_account = Account.find(params[:id])
     @to_account = Account.find_by(phone_number:params[:phone_number])
     handle_transfer
   end
 
   def transfer_by_email
-    @amount = params[:amount]
+    @amount = params[:amount].to_d
     @from_account = Account.find(params[:id])
     @to_account = Account.find_by(email:params[:email])
     handle_transfer
   end
 
   def handle_transfer
-    return render json: { error: "required amount"}, status: 403 if @amount.nil?
-    return render json: { error: "invalid account"}, status: 403 if @to_account.nil?
-    return render json: { error: "same account"}, status: 403 if @to_account == @from_account
+    return render json: { error: "required amount"}, status: 400 if @amount.nil?
+    return render json: { error: "invalid account"}, status: 400 if @to_account.nil?
     return render json: { error: "invalid account status"}, status: 403 unless valid_accounts_statuses
+    return render json: { error: "same account"}, status: 400 if @to_account == @from_account
     return render json: { error: "insufficient balance"}, status: 403 unless transfer_amount
     return render status: :ok
   end
@@ -74,5 +75,18 @@ class Api::V1::AccountsController < ApplicationController
 
   def valid_accounts_statuses
     return @from_account.verified_status? && @to_account.verified_status?
+  end
+
+  def topup(account, amount)
+    ActiveRecord::Base.transaction do
+      account.update!(balance: account.balance + amount)
+      Transaction.create(
+        id:SecureRandom.uuid,
+        event: :balance_topup,
+        amount:amount,
+        amount_type: :credit,
+        account_id: account.id
+      )
+    end
   end
 end
